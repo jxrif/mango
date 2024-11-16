@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Display</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      text-align: center;
+      margin-top: 50px;
+    }
+    h1 {
+      color: #4CAF50;
+    }
+    .password-container {
+      display: inline-block;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
+    }
+    .password {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .timestamp {
+      font-size: 18px;
+      color: #777;
+    }
+    .countdown {
+      font-size: 8px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>Current Passwords</h1>
+  <div id="passwords" class="password-container">Fetching passwords...</div>
+
+  <script>
+    async function fetchPasswords() {
+      try {
+        const response = await fetch('http://localhost:3000/get-passwords');
+        const data = await response.json();
+        const passwordsDiv = document.getElementById('passwords');
+
+        if (data.passwords.length === 0) {
+          passwordsDiv.innerHTML = '<div class="password">No passwords set</div>';
+          return;
+        }
+
+        passwordsDiv.innerHTML = '';
+        data.passwords.forEach(p => {
+          const passwordDiv = document.createElement('div');
+          passwordDiv.className = 'password';
+
+          const timestamp = new Date(p.timestamp);
+          const currentTime = new Date();
+          const elapsedTime = currentTime - timestamp;
+          const remainingTime = 3 * 60 * 1000 - elapsedTime; // 3 minutes in milliseconds
+          const remainingSeconds = Math.floor((remainingTime / 1000) % 60);
+          const remainingMinutes = Math.floor((remainingTime / 60000) % 60);
+          const remainingHours = Math.floor((remainingTime / 3600000) % 24);
+
+          const elapsedSeconds = Math.floor(elapsedTime / 1000) % 60;
+          const elapsedMinutes = Math.floor(elapsedTime / 60000) % 60;
+          const elapsedHours = Math.floor(elapsedTime / 3600000) % 24;
+
+          const formattedTime = `${elapsedHours}h ${elapsedMinutes}m ${elapsedSeconds}s`;
+          const countdownTime = `${remainingHours}h ${remainingMinutes}m ${remainingSeconds}s`;
+          passwordDiv.innerHTML = `${p.password} <div class="timestamp">(set at ${timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}, elapsed time: ${formattedTime})<div class="countdown">(deleting in ${countdownTime})</div></div>`;
+          passwordsDiv.appendChild(passwordDiv);
+        });
+      } catch (error) {
+        document.getElementById('passwords').textContent = 'Error fetching passwords';
+        console.error('Error fetching passwords:', error);
+      }
+    }
+
+    setInterval(fetchPasswords, 1000); // Refresh the passwords every 1 second
+  </script>
+</body>
+</html>
